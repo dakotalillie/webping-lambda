@@ -1,0 +1,6 @@
+.idea
+.localstack
+.terraform
+bin
+terraform.tfstate*
+*.tfvars
