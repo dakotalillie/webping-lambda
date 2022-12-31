@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -15,32 +13,6 @@ import (
 	"github.com/twilio/twilio-go"
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 )
-
-type SMSSender interface {
-	CreateMessage(params *twilioApi.CreateMessageParams) (*twilioApi.ApiV2010Message, error)
-}
-
-type CustomSMSSender struct {
-	Endpoint string
-}
-
-func (t CustomSMSSender) CreateMessage(params *twilioApi.CreateMessageParams) (*twilioApi.ApiV2010Message, error) {
-	req, err := http.NewRequestWithContext(
-		context.Background(),
-		http.MethodPost,
-		t.Endpoint,
-		strings.NewReader(*params.Body),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	if _, err = http.DefaultClient.Do(req); err != nil {
-		return nil, fmt.Errorf("failed to submit request: %w", err)
-	}
-
-	return nil, nil
-}
 
 type TwilioParams struct {
 	AccountSID string
@@ -70,16 +42,22 @@ func HandleRequest(ctx context.Context, req events.SNSEvent) (string, error) {
 		return "Failed to set TWILIO_AUTH_TOKEN env var: " + err.Error(), err
 	}
 
-	sender := getSMSSender()
+	client := twilio.NewRestClient()
 	messageParams := &twilioApi.CreateMessageParams{}
 	messageParams.SetBody(record.Message)
 	messageParams.SetFrom(twilioParams.FromNumber)
 	messageParams.SetTo(twilioParams.ToNumber)
-	if _, err = sender.CreateMessage(messageParams); err != nil {
+	resp, err := client.Api.CreateMessage(messageParams)
+	if err != nil {
 		return "Failed to send SMS: " + err.Error(), err
 	}
 
-	return "Success", nil
+	var messageSID string
+	if resp.Sid != nil {
+		messageSID = *resp.Sid
+	}
+
+	return messageSID, nil
 }
 
 func initializeSSMClient(ctx context.Context) (*ssm.Client, error) {
@@ -137,16 +115,6 @@ func getTwilioParamsFromSSM(ctx context.Context, ssmClient *ssm.Client) (TwilioP
 	}
 
 	return params, nil
-}
-
-func getSMSSender() SMSSender {
-	smsEndpoint := os.Getenv("SMS_ENDPOINT")
-	if smsEndpoint != "" {
-		return CustomSMSSender{Endpoint: smsEndpoint}
-	}
-
-	client := twilio.NewRestClient()
-	return client.Api
 }
 
 func main() {
