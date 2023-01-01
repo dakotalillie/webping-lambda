@@ -56,9 +56,9 @@ func TestSMS(t *testing.T) {
 	}
 
 	var targetMsg *twilioApi.ApiV2010Message
-	for _, msg := range messages {
+	for i, msg := range messages {
 		if msg.Body != nil && strings.Contains(*msg.Body, snsMsg) {
-			targetMsg = &msg
+			targetMsg = &messages[i]
 		}
 	}
 

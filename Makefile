@@ -13,6 +13,10 @@ invoke-sms:
 		--topic-arn $$TOPIC_ARN \
 		--message 'This is a test of the SMS lambda function'
 
+.PHONY: lint
+lint:
+	golangci-lint run
+
 .PHONY: render-sms
 render-sms:
 	set -a \

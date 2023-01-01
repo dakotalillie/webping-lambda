@@ -97,7 +97,7 @@ func getTwilioParamsFromSSM(ctx context.Context, ssmClient *ssm.Client) (TwilioP
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		return TwilioParams{}, fmt.Errorf("failed to get parameters from ssm: %s", err)
+		return TwilioParams{}, fmt.Errorf("failed to get parameters from ssm: %w", err)
 	}
 
 	var params TwilioParams
