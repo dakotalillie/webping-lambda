@@ -42,27 +42,36 @@ func TestSMS(t *testing.T) {
 		t.Fatal("failed to publish to SNS:", err)
 	}
 
+	var targetMsg *twilioApi.ApiV2010Message
+
 	// Give Twilio API time to ingest the message before we query for it
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	client := twilio.NewRestClient()
 	params := twilioApi.ListMessageParams{}
 	params.SetDateSentAfter(time.Now().Add(-10 * time.Minute))
 	params.SetLimit(5)
-	messages, err := client.Api.ListMessage(&params)
-	if err != nil {
-		t.Fatal("failed to list messages from Twilio:", err)
-	}
 
-	var targetMsg *twilioApi.ApiV2010Message
-	for i, msg := range messages {
-		if msg.Body != nil && strings.Contains(*msg.Body, snsMsg) {
-			targetMsg = &messages[i]
+	for attempt := 0; attempt < 3; attempt++ {
+		messages, err := client.Api.ListMessage(&params)
+		if err != nil {
+			t.Fatal("failed to list messages from Twilio:", err)
 		}
+
+		for i, msg := range messages {
+			if msg.Body != nil && strings.Contains(*msg.Body, snsMsg) {
+				targetMsg = &messages[i]
+				break
+			}
+		}
+
+		if targetMsg != nil {
+			break
+		}
+		time.Sleep(10 * time.Second)
 	}
 
 	if targetMsg == nil {
-		t.Log("number of retrieved messages:", len(messages))
 		t.Fatal("could not find target message")
 	} else if targetMsg.Status == nil {
 		t.Fatal("target message has no status")
