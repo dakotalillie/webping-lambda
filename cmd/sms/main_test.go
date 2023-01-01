@@ -3,7 +3,6 @@ package main_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -19,9 +18,9 @@ import (
 
 func TestSMS(t *testing.T) {
 	if err := godotenv.Load(); err != nil {
-		t.Fatal("failed to load environment variables:", err)
+		// This should not fail the test, because in CI, these values aren't derived from .env
+		t.Log("failed to load environment variables from .env:", err)
 	}
-	t.Log(os.Environ())
 
 	ctx := context.Background()
 
