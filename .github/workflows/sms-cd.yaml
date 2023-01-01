@@ -37,5 +37,10 @@ jobs:
       - name: Run tests
         run: go test -v ./cmd/sms
         env:
+          # The values for these credentials aren't used by LocalStack, they just need to be set so that the Go SDK
+          # doesn't complain
+          AWS_ACCESS_KEY_ID: foo
+          AWS_SECRET_ACCESS_KEY: bar
+          AWS_REGION: us-east-1
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
