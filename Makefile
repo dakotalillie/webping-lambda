@@ -13,6 +13,10 @@ invoke-sms:
 		--topic-arn $$TOPIC_ARN \
 		--message 'This is a test of the SMS lambda function'
 
+.PHONY: lint
+lint:
+	golangci-lint run
+
 .PHONY: render-sms
 render-sms:
 	set -a \
@@ -21,8 +25,8 @@ render-sms:
 	&& envsubst < terraform.tfvars.tmpl > terraform.tfvars
 
 .PHONY: start-sms
-start-sms: render-sms
-	docker-compose up -d
+start-sms:
+	docker compose up -d
 	cd cmd/sms/terraform \
 	&& tflocal init \
 	&& AWS_DEFAULT_REGION=us-east-1 tflocal apply -auto-approve

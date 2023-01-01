@@ -1,0 +1,8 @@
+linters:
+  disable:
+    - contextcheck
+    - rowserrcheck
+    - scopelint
+    - sqlclosecheck
+  presets:
+    - bugs
