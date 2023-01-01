@@ -49,6 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          cache: true
+          go-version: '~1.19.4'
+      - name: Install dependencies
+        run: go get ./cmd/sms
       - name: Build
         run: |
           make build-sms
