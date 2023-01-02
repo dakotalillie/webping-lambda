@@ -18,7 +18,7 @@ provider "aws" {
 }
 
 resource "aws_iam_role" "this" {
-  name = "sms-lambda"
+  name = "ping-lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -36,55 +36,56 @@ resource "aws_iam_role" "this" {
 
 data "archive_file" "this" {
   type        = "zip"
-  source_file = "../../../bin/sms"
-  output_path = "../../../bin/sms.zip"
+  source_file = "../../bin/ping"
+  output_path = "../../bin/ping.zip"
 }
 
 resource "aws_lambda_function" "this" {
   filename         = data.archive_file.this.output_path
-  function_name    = "sms"
-  handler          = "sms"
+  function_name    = "ping"
+  handler          = "ping"
   role             = aws_iam_role.this.arn
   runtime          = "go1.x"
   source_code_hash = data.archive_file.this.output_base64sha256
 
   environment {
     variables = {
-      SMS_ENDPOINT = var.sms_endpoint
+      DB_TABLE  = aws_dynamodb_table.this.name
+      ENDPOINTS = join(",", var.endpoints)
+      SNS_TOPIC = aws_sns_topic.this.arn
     }
   }
 }
 
-resource "aws_ssm_parameter" "twilio_account_sid" {
-  name  = "/Twilio/AccountSID"
-  type  = "String"
-  value = var.twilio_account_sid
+resource "aws_dynamodb_table" "this" {
+  billing_mode   = "PROVISIONED"
+  hash_key       = "Endpoint"
+  name           = "ping"
+  range_key      = "Timestamp"
+  read_capacity  = 1
+  write_capacity = 1
+
+  attribute {
+    name = "Endpoint"
+    type = "S"
+  }
+
+  attribute {
+    name = "Timestamp"
+    type = "N"
+  }
 }
 
-resource "aws_ssm_parameter" "twilio_auth_token" {
-  name  = "/Twilio/AuthToken"
-  type  = "SecureString"
-  value = var.twilio_auth_token
-}
-
-resource "aws_ssm_parameter" "twilio_phone_number" {
-  name  = "/Twilio/PhoneNumber"
-  type  = "String"
-  value = var.twilio_phone_number
-}
-
-resource "aws_ssm_parameter" "personal_phone_number" {
-  name  = "/Personal/PhoneNumber"
-  type  = "String"
-  value = var.personal_phone_number
+resource "aws_sqs_queue" "this" {
+  name = "ping"
 }
 
 resource "aws_sns_topic" "this" {
-  name = "sms"
+  name = "ping"
 }
 
 resource "aws_sns_topic_subscription" "this" {
-  endpoint  = aws_lambda_function.this.arn
-  protocol  = "lambda"
   topic_arn = aws_sns_topic.this.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.this.arn
 }

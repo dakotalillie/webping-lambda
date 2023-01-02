@@ -1,10 +1,10 @@
-name: sms-cd
+name: cd-sms
 on:
   push:
     branches:
       - main
     paths:
-      - cmd/sms/**/*.go
+      - internal/sms/**
 jobs:
   # We're only running the tests on push to main because the tests send actual SMS messages
   test:
@@ -24,7 +24,7 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: |
-          go get -t ./cmd/sms
+          go get -t ./...
           pip install terraform-local
       - name: Setup test infrastructure
         run: |
@@ -36,7 +36,7 @@ jobs:
           TF_VAR_twilio_auth_token: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TF_VAR_twilio_phone_number: ${{ secrets.TWILIO_PHONE_NUMBER }}
       - name: Run tests
-        run: go test -v ./cmd/sms
+        run: go test -v ./internal/sms
         env:
           # The values for these credentials aren't used by LocalStack, they just need to be set so that the Go SDK
           # doesn't complain
