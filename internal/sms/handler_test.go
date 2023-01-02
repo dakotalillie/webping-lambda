@@ -17,7 +17,7 @@ import (
 )
 
 func TestSMS(t *testing.T) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("../../.env"); err != nil {
 		// This should not fail the test, because in CI, these values aren't derived from .env
 		t.Log("failed to load environment variables from .env:", err)
 	}
