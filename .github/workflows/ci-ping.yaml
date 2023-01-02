@@ -1,0 +1,40 @@
+name: ci-ping
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - internal/ping/**
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          cache: true
+          go-version: '~1.19.4'
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.3.6'
+          terraform_wrapper: false
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          go get -t ./cmd/sms
+          pip install terraform-local
+      - name: Setup test infrastructure
+        run: |
+          cp terraform/ping/terraform.tfvars.tmpl terraform/ping/terraform.tfvars
+          make build-ping
+          make start-ping
+      - name: Run tests
+        run: go test -v ./internal/ping
+        env:
+          # The values for these credentials aren't used by LocalStack, they just need to be set so that the Go SDK
+          # doesn't complain
+          AWS_ACCESS_KEY_ID: foo
+          AWS_SECRET_ACCESS_KEY: bar
+          AWS_REGION: us-east-1
