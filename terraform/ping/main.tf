@@ -36,8 +36,8 @@ resource "aws_iam_role" "this" {
 
 data "archive_file" "this" {
   type        = "zip"
-  source_file = "../../../bin/ping"
-  output_path = "../../../bin/ping.zip"
+  source_file = "../../bin/ping"
+  output_path = "../../bin/ping.zip"
 }
 
 resource "aws_lambda_function" "this" {
