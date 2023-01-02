@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -20,7 +19,20 @@ type TwilioParams struct {
 	ToNumber   string
 }
 
-func HandleRequest(ctx context.Context, req events.SNSEvent) (string, error) {
+// Request is a partial definition of the full SNS event structure
+// We're only using a partial definition to allow EventBridge to more easily spoof an SNS notification event
+// We need EventBridge to do this because the Twilio number needs to be used on a regular basis, otherwise it will
+// automatically be retired
+// These definitions come from https://github.com/aws/aws-lambda-go/blob/main/events/sns.go
+type Request struct {
+	Records []struct {
+		SNS struct {
+			Message string `json:"Message"`
+		} `json:"Sns"`
+	} `json:"Records"`
+}
+
+func HandleRequest(ctx context.Context, req Request) (string, error) {
 	record := req.Records[0].SNS
 
 	ssmClient, err := initializeSSMClient(ctx)
