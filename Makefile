@@ -11,6 +11,16 @@ build-ping:
 build-sms:
 	GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ./bin/sms ./cmd/sms
 
+.PHONY: invoke-ping
+invoke-ping:
+	 awslocal lambda invoke \
+		--function-name ping \
+		--log-type Tail \
+		--payload '{}' \
+		ping.out \
+		| jq -r '.LogResult' \
+		| base64 -d
+
 .PHONY: invoke-sms
 invoke-sms:
 	TOPIC_ARN=$$(cd terraform/sms && tflocal output -raw sns_topic_arn) \
@@ -22,12 +32,24 @@ invoke-sms:
 lint:
 	golangci-lint run
 
+.PHONY: render-all
+	make render-ping
+	make render-sms
+
+.PHONY: render-ping
+	cp terraform/ping/terraform.tfvars.tmpl terraform/ping/terraform.tfvars
+
 .PHONY: render-sms
 render-sms:
 	set -a \
 	&& source .env \
 	&& cd terraform/sms \
 	&& envsubst < terraform.tfvars.tmpl > terraform.tfvars
+
+.PHONY: start-all
+start-all:
+	make start-ping
+	make start-sms
 
 .PHONY: start-ping
 start-ping:
