@@ -23,7 +23,14 @@ Currently, there are two lambdas maintained via this repo:
    functions.
 5. Ensure you have Docker running locally, as it is needed to run
    [LocalStack](https://localstack.cloud/).
-6. Run `make start-all` to provision the local Dockerized AWS infrastructure.
+6. Install the [tflocal](https://github.com/localstack/terraform-local) and 
+   [awslocal](https://github.com/localstack/awscli-local) helpers via pip. 
+
+   ```shell
+   pip install terraform-local awscli-local
+   ```
+   
+7. Run `make start-all` to provision the local Dockerized AWS infrastructure.
 
 Each of the Lambdas has their own invocation Make target. Running `make 
 invoke-ping` will invoke the lambda directly, outputting the logs to stdout 
